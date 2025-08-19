@@ -4,7 +4,9 @@ import { jwtVerify } from "jose"
 export default defineEventHandler(async (event) => {
   const url = getRequestURL(event)
   if (!url.pathname.startsWith("/api")) return
-  if (["JWT_SECRET", "G_CLIENT_ID", "G_CLIENT_SECRET"].find(k => !process.env[k])) {
+  if (["JWT_SECRET"].find(k => !process.env[k])
+    || (!process.env.G_CLIENT_ID && !process.env.GOOGLE_CLIENT_ID)
+    || (!process.env.G_CLIENT_SECRET && !process.env.GOOGLE_CLIENT_SECRET)) {
     event.context.disabledLogin = true
     if (["/api/s", "/api/proxy", "/api/latest", "/api/mcp"].every(p => !url.pathname.startsWith(p)))
       throw createError({ statusCode: 506, message: "Server not configured, disable login" })

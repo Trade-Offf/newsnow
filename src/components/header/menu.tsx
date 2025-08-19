@@ -12,25 +12,46 @@ import { motion } from "framer-motion"
 //   )
 // }
 
+// 处理不同类型的头像URL
+function getAvatarUrl(avatar: string | undefined) {
+  if (!avatar) return ""
+
+  // Google头像
+  if (avatar.includes("googleusercontent.com")) {
+    return `${avatar}`
+  }
+
+  // GitHub头像
+  if (avatar.includes("github") || avatar.includes("avatars")) {
+    return `${avatar}`
+  }
+
+  // 其他头像直接返回
+  return avatar
+}
+
 export function Menu() {
-  const { loggedIn, login, logout, userInfo, enableLogin } = useLogin()
+  const { loggedIn, login, logout, userInfo, enableLogin, providers } = useLogin()
   const [shown, show] = useState(false)
+
   return (
     <span className="relative" onMouseEnter={() => show(true)} onMouseLeave={() => show(false)}>
       <span className="flex items-center scale-90">
         {
           enableLogin && loggedIn && userInfo.avatar
             ? (
-                <button
-                  type="button"
-                  className="h-6 w-6 rounded-full bg-cover"
-                  style={
-                    {
-                      backgroundImage: `url(${userInfo.avatar}&s=24)`,
-                    }
-                  }
-                >
-                </button>
+                <div className="relative w-10">
+                  <img
+                    src={getAvatarUrl(userInfo.avatar)}
+                    alt="用户头像"
+                    className="h-8 w-8 rounded-full border-2 border-transparent hover:border-primary transition-all duration-200 cursor-pointer object-cover"
+                    title={`已登录: ${userInfo.name || "用户"}`}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23999' d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
+                    }}
+                  />
+                </div>
               )
             : <button type="button" className="btn i-si:more-muted-horiz-circle-duotone" />
         }
@@ -53,40 +74,52 @@ export function Menu() {
             <ol className="bg-base bg-op-70! backdrop-blur-md p-2 rounded-lg color-base text-base">
               {enableLogin && (loggedIn
                 ? (
-                    <li onClick={logout}>
-                      <span className="i-ph:sign-out-duotone inline-block" />
-                      <span>退出登录</span>
-                    </li>
+                    <>
+                      {/* 用户信息显示 */}
+                      <li className="no-hover py-2 border-b border-base border-op-20 mb-2">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={getAvatarUrl(userInfo.avatar)}
+                            alt="用户头像"
+                            className="w-8 h-8 rounded-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'%3E%3Cpath fill='%23999' d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
+                            }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">
+                              {userInfo.name || "用户"}
+                            </div>
+                            <div className="text-xs text-base text-op-60">
+                              已登录
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                      {/* 退出登录按钮 */}
+                      <li onClick={logout} className="px-3 py-2">
+                        <span className="i-ph:sign-out-duotone inline-block" />
+                        <span>退出登录</span>
+                      </li>
+                    </>
                   )
                 : (
-                    <li onClick={login}>
-                      <span className="i-ph:sign-in-duotone inline-block" />
-                      <span>Github 账号登录</span>
-                    </li>
+                    <>
+                      {providers.map(provider => (
+                        <li key={provider.name} onClick={() => login(provider.name)} className="px-3 py-2">
+                          <span className={provider.name === "github" ? "i-ph:github-logo-duotone" : "i-ph:google-logo-duotone"} />
+                          <span>{provider.name === "github" ? "Github 账号登录" : "Google 账号登录"}</span>
+                        </li>
+                      ))}
+                      {providers.length === 0 && (
+                        <li onClick={() => login()} className="px-3 py-2">
+                          <span className="i-ph:sign-in-duotone" />
+                          <span>登录</span>
+                        </li>
+                      )}
+                    </>
                   ))}
-              {/* <ThemeToggle /> */}
-              <li onClick={() => window.open(Homepage)} className="cursor-pointer [&_*]:cursor-pointer transition-all">
-                <span className="i-ph:github-logo-duotone inline-block" />
-                <span>Star on Github </span>
-              </li>
-              <li className="flex gap-2 items-center">
-                <a
-                  href="https://github.com/ourongxing/newsnow"
-                >
-                  <img
-                    alt="GitHub stars badge"
-                    src="https://img.shields.io/github/stars/ourongxing/newsnow?logo=github&style=flat&labelColor=%235e3c40&color=%23614447"
-                  />
-                </a>
-                <a
-                  href="https://github.com/ourongxing/newsnow/fork"
-                >
-                  <img
-                    alt="GitHub forks badge"
-                    src="https://img.shields.io/github/forks/ourongxing/newsnow?logo=github&style=flat&labelColor=%235e3c40&color=%23614447"
-                  />
-                </a>
-              </li>
             </ol>
           </motion.div>
         </div>

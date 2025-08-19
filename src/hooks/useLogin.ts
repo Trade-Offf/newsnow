@@ -8,6 +8,7 @@ const jwtAtom = atomWithStorage("jwt", "")
 const enableLoginAtom = atomWithStorage<{
   enable: boolean
   url?: string
+  providers?: Array<{ name: string, url: string }>
 }>("login", {
   enable: true,
 })
@@ -28,7 +29,14 @@ export function useLogin() {
   const jwt = useAtomValue(jwtAtom)
   const enableLogin = useAtomValue(enableLoginAtom)
 
-  const login = useCallback(() => {
+  const login = useCallback((provider?: string) => {
+    if (provider && enableLogin.providers) {
+      const providerConfig = enableLogin.providers.find(p => p.name === provider)
+      if (providerConfig) {
+        window.location.href = providerConfig.url
+        return
+      }
+    }
     window.location.href = enableLogin.url || "/api/login"
   }, [enableLogin])
 
@@ -41,6 +49,7 @@ export function useLogin() {
     loggedIn: !!jwt,
     userInfo,
     enableLogin: !!enableLogin.enable,
+    providers: enableLogin.providers || [],
     logout,
     login,
   }
